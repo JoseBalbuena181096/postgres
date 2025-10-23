@@ -1,56 +1,23 @@
-## Esta sección tiene pro objetivo principal dos cosas:
-
-1. Practicar queries con la base de datos
-2. Realizar queries un poco más complejos
-
-
-Aquí tendremos en un uso aplicado y real, dos funciones propias de PostgreSQL, como son el json_agg y el json_build_object, las cuales ayudarán mucho cuando queramos crear cierto tipo de objeto json para alguna tarea en específico.
-
-Desafortunadamente, eso hará que tengamos una función medio complicada, pero lo resolveremos creando una función personalizada que resumirá el query enormemente.
-
-## Preparacion base de datos
-Ejecutamos el script de medium_database-sqls.sql para crear la base de datos y las tablas.
+-- Soluciones a los ejercicios de Base de Datos Medium
+-- Basado en el esquema de tablas: users, posts, comments, claps, user_lists, user_list_entry
 
 -- 1. Cuantos Post hay - 1050
-
-```sql
 SELECT COUNT(*) as total_posts 
 FROM posts;
 
-```
-
 -- 2. Cuantos Post publicados hay - 543
-```sql
 SELECT COUNT(*) as published_posts 
 FROM posts 
 WHERE published = true;
-```
-
 
 -- 3. Cual es el Post mas reciente
 -- 544 - nisi commodo officia...2024-05-30 00:29:21.277
-```SQL
 SELECT post_id, title, created_at 
 FROM posts 
 ORDER BY created_at DESC 
 LIMIT 1;
-```
-
 
 -- 4. Quiero los 10 usuarios con más post, cantidad de posts, id y nombre
-/*
-4	1553	Jessie Sexton
-3	1400	Prince Fuentes
-3	1830	Hull George
-3	470	Traci Wood
-3	441	Livingston Davis
-3	1942	Inez Dennis
-3	1665	Maggie Davidson
-3	524	Lidia Sparks
-3	436	Mccoy Boone
-3	2034	Bonita Rowe
-*/
-```sql
 SELECT 
     COUNT(p.post_id) as post_count,
     u.user_id,
@@ -60,19 +27,8 @@ INNER JOIN posts p ON u.user_id = p.created_by
 GROUP BY u.user_id, u.name
 ORDER BY post_count DESC
 LIMIT 10;
-```
-
-
 
 -- 5. Quiero los 5 post con más "Claps" sumando la columna "counter"
-/*
-692	sit excepteur ex ipsum magna fugiat laborum exercitation fugiat
-646	do deserunt ea
-542	do
-504	ea est sunt magna consectetur tempor cupidatat
-502	amet exercitation tempor laborum fugiat aliquip dolore
-*/
-```SQL
 SELECT 
     p.post_id,
     p.title,
@@ -82,18 +38,8 @@ INNER JOIN claps c ON p.post_id = c.post_id
 GROUP BY p.post_id, p.title
 ORDER BY total_claps DESC
 LIMIT 5;
-```
 
-
--- 6. Top 5 de personas que han dado más claps (voto único no acumulado ) *count
-/*
-7	Lillian Hodge
-6	Dominguez Carson
-6	Marva Joyner
-6	Lela Cardenas
-6	Rose Owen
-*/
-```sql
+-- 6. Top 5 de personas que han dado más claps (voto único no acumulado) *count
 SELECT 
     COUNT(c.clap_id) as clap_count,
     u.name
@@ -102,18 +48,8 @@ INNER JOIN claps c ON u.user_id = c.user_id
 GROUP BY u.user_id, u.name
 ORDER BY clap_count DESC
 LIMIT 5;
-```
-
 
 -- 7. Top 5 personas con votos acumulados (sumar counter)
-/*
-437	Rose Owen
-394	Marva Joyner
-386	Marquez Kennedy
-379	Jenna Roth
-364	Lillian Hodge
-*/
-```SQL
 SELECT 
     SUM(c.counter) as total_counter,
     u.name
@@ -122,30 +58,16 @@ INNER JOIN claps c ON u.user_id = c.user_id
 GROUP BY u.user_id, u.name
 ORDER BY total_counter DESC
 LIMIT 5;
-```
 
-
-
--- 8. Cuantos usuarios NO tienen listas de favoritos creada
--- 329
-```SQL
+-- 8. Cuantos usuarios NO tienen listas de favoritos creada - 329
 SELECT COUNT(*) as users_without_lists
 FROM users u
 LEFT JOIN user_lists ul ON u.user_id = ul.user_id
 WHERE ul.user_list_id IS NULL;
-```
 
-
--- 9. Quiero el comentario con id
+-- 9. Quiero el comentario con id 1
 -- Y en el mismo resultado, quiero sus respuestas (visibles e invisibles)
 -- Tip: union
-/*
-1	    648	1905	elit id...
-3058	583	1797	tempor mollit...
-4649	51	1842	laborum mollit...
-4768	835	1447	nostrud nulla...
-*/
-```sql
 SELECT 
     comment_id,
     post_id,
@@ -165,20 +87,11 @@ FROM comments
 WHERE comment_parent_id = 1
 ORDER BY comment_id;
 
-```
-
-
--- ** 10. Avanzado
+-- 10. Avanzado
 -- Investigar sobre el json_agg y json_build_object
 -- Crear una única linea de respuesta, con las respuestas
 -- del comentario con id 1 (comment_parent_id = 1)
 -- Mostrar el user_id y el contenido del comentario
-
--- Salida esperada:
-/*
-"[{""user"" : 1797, ""comment"" : ""tempor mollit aliqua dolore cupidatat dolor tempor""}, {""user"" : 1842, ""comment"" : ""laborum mollit amet aliqua enim eiusmod ut""}, {""user"" : 1447, ""comment"" : ""nostrud nulla duis enim duis reprehenderit laboris voluptate cupidatat""}]"
-*/
-```SQL
 SELECT json_agg(
     json_build_object(
         'user', user_id,
@@ -187,14 +100,10 @@ SELECT json_agg(
 ) as replies
 FROM comments 
 WHERE comment_parent_id = 1;
-```
 
-
--- ** 11. Avanzado
+-- 11. Avanzado
 -- Listar todos los comentarios principales (no respuestas) 
 -- Y crear una columna adicional "replies" con las respuestas en formato JSON
-
-```sql
 SELECT 
     c.comment_id,
     c.post_id,
@@ -220,6 +129,51 @@ WHERE c.comment_parent_id IS NULL
 ORDER BY c.comment_id;
 ```
 
+## Función saludar
+-- Crear una función que reciba un nombre y retorne un saludo
+-- Ejemplo: saludar('Juan') -> 'Hola Juan!'
+```SQL
+CREATE OR REPLACE FUNCTION saludar(nombre TEXT)
+RETURNS TEXT AS 
+$$
+BEGIN
+    RETURN 'Hola ' || nombre || '!';
+END
+$$
+LANGUAGE plpgsql;
 
+SELECT saludar('Juan');
+```
 
+## Solucion de ejercicio 11 con funciones 
 
+```SQL
+CREATE OR REPLACE FUNCTION comment_replies(id INT)
+RETURNS JSON AS 
+$$
+DECLARE
+    result JSON;
+BEGIN
+    SELECT json_agg(
+        json_build_object(
+            'user', user_id,
+            'comment', content
+        )
+    ) as replies INTO result
+    FROM comments 
+    WHERE comment_parent_id = id;
+    RETURN result;
+END
+$$
+LANGUAGE plpgsql;
+
+SELECT comment_replies(2);
+```
+La consulta 11 con la función comment_replies
+```SQL
+SELECT a.*, 
+    comment_replies(a.comment_id) as replies
+FROM comments a
+WHERE a.comment_parent_id IS NULL
+ORDER BY a.comment_id;
+```
