@@ -78,3 +78,88 @@ ALTER VIEW comments_per_week RENAME TO posts_per_week;
 ```SQL
 ALTER MATERIALIZED VIEW comments_per_week_mat RENAME TO posts_per_week_mat;
 ```
+
+## Common table expressions (CTE)
+Los Common Table Expressions (CTE) son una forma de definir una subconsulta temporal dentro de una consulta principal. Las CTEs se utilizan para mejorar la legibilidad y la mantenibilidad de las consultas complejas. Solo se usan en dos casos, para simplificar queries, queries demaciado grandes, separar en queries mas sencillos.
+
+```SQL
+WITH post_week_2024 AS(
+SELECT date_trunc('week'::text, posts.created_at) AS weeks,
+    sum(claps.counter) AS total_claps,
+    count(DISTINCT posts.post_id) AS number_of_posts,
+    count(*) AS number_of_claps
+   FROM posts
+     JOIN claps ON claps.post_id = posts.post_id
+  GROUP BY (date_trunc('week'::text, posts.created_at))
+  ORDER BY (date_trunc('week'::text, posts.created_at)) DESC
+)
+SELECT * FROM post_week_2024
+WHERE weeks BETWEEN '2024-01-01' AND '2024-12-31' AND total_claps >= 300;
+```
+Donde si son totalmente el uso de los common table expressions, es en los queries recursivos.
+
+### Multiples CTEs
+
+Los posts totales en 2023 :
+```SQL	
+WITH claps_per_posts AS (
+	SELECT post_id, sum(counter) FROM claps
+	GROUP BY post_id
+),
+posts_from_2023 as (
+	SELECT * FROM posts WHERE created_at BETWEEN '2023-01-01' AND '2023-12-31'
+)
+SELECT * FROM claps_per_posts
+WHERE claps_per_posts.post_id IN (
+	SELECT post_id FROM posts_from_2023 
+);
+```
+
+## CTE - Recursivos
+Los queries recursivos son queries que se ejecutan varias veces, hasta que se cumple una condición. En cada iteración, se actualizan los datos y se vuelve a ejecutar el query. Muy usados en estructuras de datos como árboles, de tipo jerárquico.
+
+![](image.png)
+
+```SQL
+-- NOMBRE DE LA TABLA EN MEMORIA
+-- CAMPOS QUE VAMOS A TENER
+
+WITH RECURSIVE countdown (val) AS (
+  -- Initializatio => el primer nivel, o valores iniciales
+  SELECT 5 AS val
+  UNION
+  -- QUERY RECURSIVO
+  SELECT val - 1 FROM countdown
+  WHERE val > 0
+)
+-- SELECT DE LOS CAMPOS
+SELECT * FROM countdown;
+```
+
+```SQL
+
+WITH RECURSIVE countup (val) AS (
+  -- Initializatio => el primer nivel, o valores iniciales
+  SELECT 1 AS val
+  UNION
+  -- QUERY RECURSIVO
+  SELECT val + 1 FROM countup
+  WHERE val < 10
+)
+-- SELECT DE LOS CAMPOS
+SELECT * FROM countup;
+```
+
+## Tabla de multiplicar 1 a 10
+```SQL
+WITH RECURSIVE multiplication_table (base, val, result) AS (
+  -- Initializatio => el primer nivel, o valores iniciales
+  SELECT 5 AS base, 1 AS val, 5*1 AS result
+  UNION
+  -- QUERY RECURSIVO
+  SELECT base, val + 1, base * (val + 1) FROM multiplication_table
+  WHERE val < 10
+)
+-- SELECT DE LOS CAMPOS
+SELECT * FROM multiplication_table;
+```
