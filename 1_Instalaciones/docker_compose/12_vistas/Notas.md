@@ -166,6 +166,8 @@ SELECT * FROM multiplication_table;
 
 ## Preparación tabla empleados
 
+![](image_2.png)
+
 ```SQL
 CREATE TABLE employees (
     id SERIAL PRIMARY KEY,
@@ -188,4 +190,71 @@ VALUES
     (10, 'Presidente Karla', NULL);
 ```
 
-Todos los subjerenres de Jefe Carlos
+Todos los del primer nivel de Jefe Carlos
+```SQL
+SELECT * FROM employees WHERE report_to = 1;
+```
+
+## CTE recursivo - estructura organizacional
+```SQL
+WITH RECURSIVE bosses as (
+  -- Init
+  SELECT id, name, report_to FROM employees WHERE id = 1
+  UNION
+  -- Recursive
+  SELECT employees.id, employees.name, employees.report_to FROM employees
+  INNER JOIN bosses ON bosses.id = employees.report_to
+)
+SELECT * FROM bosses;
+```
+
+# Insertar un nuevo empleado
+```SQL
+INSERT INTO employees (id, name, report_to)
+VALUES
+    (11, 'Jr Mariano', 8);
+```
+
+# CTE - Recursivo - Estructura organizacional con limite de nivel 2
+```SQL
+WITH RECURSIVE bosses as (
+  -- Init
+  SELECT id, name, report_to, 1 as depth FROM employees WHERE id = 1
+  UNION
+  -- Recursive
+  SELECT employees.id, employees.name, employees.report_to, bosses.depth + 1 FROM employees
+  INNER JOIN bosses ON bosses.id = employees.report_to
+  WHERE bosses.depth < 2
+)
+SELECT * FROM bosses;
+```
+
+-- Mostrar los nombres de la persona a la que el empleado reporta
+```SQL
+WITH RECURSIVE bosses as (
+  -- Init
+  SELECT id, name, report_to, NULL::character varying as boss_name, 1 as depth FROM employees WHERE id = 1
+  UNION
+  -- Recursive
+  SELECT employees.id, employees.name, employees.report_to, bosses.name as boss_name, bosses.depth + 1 FROM employees
+  INNER JOIN bosses ON bosses.id = employees.report_to
+  WHERE bosses.depth < 2
+)
+SELECT id, name, report_to, boss_name, depth FROM bosses;
+```
+
+
+```SQL
+WITH RECURSIVE bosses as (
+  -- Init
+  SELECT id, name, report_to, 1 as depth FROM employees WHERE id = 1
+  UNION
+  -- Recursive
+  SELECT employees.id, employees.name, employees.report_to, bosses.depth + 1 FROM employees
+  INNER JOIN bosses ON bosses.id = employees.report_to
+  WHERE bosses.depth < 2
+)
+SELECT bosses.*, employees.name as reports_to_name FROM bosses
+LEFT JOIN employees ON employees.id = bosses.report_to
+ORDER BY depth;
+```
