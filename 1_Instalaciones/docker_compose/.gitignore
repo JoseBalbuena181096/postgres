@@ -1,0 +1,19 @@
+# Docker volumes y datos generados
+pgadmin/
+postgres/
+
+# Archivos temporales y logs
+*.log
+*.tmp
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# Archivos de IDE
+.vscode/
+.idea/
+
+# Archivos de backup
+*.bak
+*.backup

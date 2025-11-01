@@ -163,3 +163,29 @@ WITH RECURSIVE multiplication_table (base, val, result) AS (
 -- SELECT DE LOS CAMPOS
 SELECT * FROM multiplication_table;
 ```
+
+## Preparación tabla empleados
+
+```SQL
+CREATE TABLE employees (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100),
+    report_to INT REFERENCES employees(id)
+);
+```
+```SQL
+INSERT INTO employees (id, name, report_to)
+VALUES
+    (1, 'Jefe Carlos', NULL),
+    (2, 'SubJefe Susana', 1),
+    (3, 'SubJefe Juan', 1),
+    (4, 'Gerente Pedro', 3),
+    (5, 'Gerente Melissa', 3),
+    (6, 'Gerente Carmen', 2),
+    (7, 'SubGerente Ramiro', 5),
+    (8, 'Programador Fernando', 7),
+    (9, 'Programador Eduardo', 7),
+    (10, 'Presidente Karla', NULL);
+```
+
+Todos los subjerenres de Jefe Carlos
